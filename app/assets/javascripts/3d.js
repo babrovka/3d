@@ -15,6 +15,7 @@ loader.load( '/models/model.dae', function ( collada ) {
 
   init();
   render();
+  // requestAnimationFrame(render);
 });
 
 function init() {
@@ -79,7 +80,6 @@ function init() {
 }
 
 function render() {
-  requestAnimationFrame(render);
   renderer.render( scene, camera );
   stats.update();
 }
