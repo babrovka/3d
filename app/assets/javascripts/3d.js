@@ -7,6 +7,14 @@ var dae;
 var ground;
 var objects, groups;
 
+function xhr(method, url, data, success, fail) {
+  var r = new XMLHttpRequest();
+  r.open(method, url, true);
+  r.addEventListener("load", success, false);
+  r.addEventListener("error", fail, false);
+  r.send(data);
+}
+
 var loader = new THREE.ColladaLoader();
 loader.options.convertUpAxis = true;
 loader.load( '/models/buildings.dae', function ( collada ) {
@@ -118,14 +126,37 @@ function init() {
 
   // Group objects
   groups.forEach(function(group) {
+    // TODO: filter instead of reduce
     group.members = objects.reduce(function(matching, object) {
       if(object.id >= group.min && object.id <= group.max) return matching.concat(object);
       else return matching;
     }, []);
   });
 
+  xhr('get', '/states', '', function(response) {
+    var states = JSON.parse(response.target.response);
+    states.forEach(function(group_state) {
+      var group = groups.find(function(group) { return group.name === group_state.name; });
+
+      if(group) {
+        group.comment = group_state.comment;
+        group.state = group_state.state;
+      }
+
+      if(group_state.state === 1) {
+        group.members.forEach(function(object) {
+          var red = 0xaa4444;
+          var material = new THREE.MeshBasicMaterial( { color: red } );
+          object.material = material;
+        });
+      }
+    });
+    render();
+  });
+
   var handler = function(intersect) {
     var id = intersect.object.id;
+    // TODO: find instead of reduce
     var group = groups.reduce(function(target, group) {
       if(id >= group.min && id <= group.max) return group;
       else return target;
@@ -136,8 +167,8 @@ function init() {
     });
 
     var major_color = Math.random() * 0xf00000;
-    group.members.forEach(function(object) {
-      var minor_color = Math.random() * 0xfffff;
+    group.members.foreach(function(object) {
+      var minor_color = math.random() * 0xfffff;
       var material = new THREE.MeshBasicMaterial( { color: (major_color + minor_color) } );
       object.old_material = object.material;
       object.material = material;
