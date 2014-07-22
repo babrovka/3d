@@ -10,15 +10,22 @@ var loader = new THREE.ColladaLoader();
 loader.options.convertUpAxis = true;
 loader.load( '/models/buildings.dae', function ( collada ) {
   dae = collada.scene;
-
-  deepComputeBoundingBox(dae);
-
   dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
+  dae.position.x = -10; dae.position.z = 10;
   dae.updateMatrix();
-
   init();
   render();
 });
+
+// var loader = new THREE.OBJLoader();
+// loader.load( '/models/damba_simple_v3.obj', function ( obj ) {
+//   dae = obj;
+//   dae.scale.x = dae.scale.y = dae.scale.z = 0.1;
+//   dae.rotation.x = Math.PI/2;
+//   dae.updateMatrix();
+//   init();
+//   render();
+// });
 
 function deepComputeBoundingBox(object) {
   object.children.forEach(deepComputeBoundingBox);
@@ -43,22 +50,6 @@ function init() {
 
   scene = new THREE.Scene();
 
-  // Grid
-  var size = 14, step = 10;
-
-  var geometry = new THREE.Geometry();
-  var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
-
-  for ( var i = - size; i <= size; i += step ) {
-    geometry.vertices.push( new THREE.Vector3( - size, - 0.04, i ) );
-    geometry.vertices.push( new THREE.Vector3(   size, - 0.04, i ) );
-    geometry.vertices.push( new THREE.Vector3( i, - 0.04, - size ) );
-    geometry.vertices.push( new THREE.Vector3( i, - 0.04,   size ) );
-  }
-
-  var line = new THREE.Line( geometry, material, THREE.LinePieces );
-  scene.add( line );
-
   // Add the COLLADA
   scene.add( dae );
 
@@ -80,13 +71,30 @@ function init() {
   scene.add( light );
 
   // Axes
-  scene.add( new THREE.AxisHelper( 40 ) );
+  // scene.add( new THREE.AxisHelper( 40 ) );
 
+  // Ground
   var plane_geometry = new THREE.PlaneGeometry( 100, 100 );
   var plane_material = new THREE.MeshBasicMaterial( {color: 0x6666aa, side: THREE.DoubleSide} );
   ground = new THREE.Mesh(plane_geometry, plane_material);
   ground.rotation.x = Math.PI / 2;
   scene.add(ground);
+
+  // Grid
+  var size = 100, step = 10;
+
+  var geometry = new THREE.Geometry();
+  var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
+
+  for ( var i = - size; i <= size; i += step ) {
+    geometry.vertices.push( new THREE.Vector3( - size, 0.04, i ) );
+    geometry.vertices.push( new THREE.Vector3(   size, 0.04, i ) );
+    geometry.vertices.push( new THREE.Vector3( i, 0.04, - size ) );
+    geometry.vertices.push( new THREE.Vector3( i, 0.04,   size ) );
+  }
+
+  var line = new THREE.Line( geometry, material, THREE.LinePieces );
+  scene.add( line );
 
   container.appendChild( renderer.domElement );
 
