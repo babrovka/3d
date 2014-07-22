@@ -5,6 +5,7 @@ var container, stats;
 var camera, scene, renderer, projector;
 var dae;
 var ground;
+var objects, groups;
 
 var loader = new THREE.ColladaLoader();
 loader.options.convertUpAxis = true;
@@ -103,7 +104,45 @@ function init() {
   stats.domElement.style.top = '0px';
   container.appendChild( stats.domElement );
 
-  container.addEventListener( 'dblclick', onDocumentMouseDown, false );
+  objects = dae.children[0].children.reduce(function(acc, children) { return acc.concat(children); }, []);
+
+  // Group by object ids
+  groups = [
+    {name: 'pyramid', min: 1, max: 21 },
+    {name: 'warehouse', min: 22, max: 42 },
+    {name: 'angle', min: 43, max: 47 },
+    {name: 'wall', min: 48, max: 50 },
+    {name: 'building', min: 51, max: 55 },
+    {name: 'ambar', min: 56, max: 58 }
+  ];
+
+  // Group objects
+  groups.forEach(function(group) {
+    group.members = objects.reduce(function(matching, object) {
+      if(object.id >= group.min && object.id <= group.max) return matching.concat(object);
+      else return matching;
+    }, []);
+  });
+
+  var handler = function(intersect) {
+    var id = intersect.object.id;
+    console.log(id);
+    var group = groups.reduce(function(target, group) {
+      if(id >= group.min && id <= group.max) return group;
+      else return target;
+    });
+
+    var color = Math.random() * 0xffffff;
+    var material = new THREE.MeshBasicMaterial( { color: color } );
+    group.members.forEach(function(object) {
+      object.material = material;
+    });
+
+    render();
+  };
+
+  container.addEventListener( 'dblclick', mouseReact(handler), false );
+  // container.addEventListener( 'mousemove', mouseReact(handler), false );
 }
 
 function render() {
@@ -111,25 +150,13 @@ function render() {
   stats.update();
 }
 
-function onDocumentMouseDown( event ) {
-  event.preventDefault();
-  // var objects = dae.children[0].children.map(function(el) { return el.children; } ).reduce(function(acc, children) { return acc.concat(children); });
-  var objects = dae.children[0].children.reduce(function(acc, children) { return acc.concat(children); }, []);
-
-  var mouse3D = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
-  var raycaster = projector.pickingRay( mouse3D.clone(), camera );
-  var intersects = raycaster.intersectObjects(objects);
-  console.log(intersects);
-
-  if(intersects.length > 0) {
-    var intersect = intersects[0];
-    var color = Math.random() * 0xffffff;
-    var material = new THREE.MeshBasicMaterial( { color: color } );
-    // if(intersect.object.material.materials)
-    //   intersect.object.material.materials.forEach(function(material) { material.color.setHex(color); });
-    // else
-      intersect.object.material = material; //.color.setHex(color);
-  }
-
-  render();
+function mouseReact(handler) {
+  return function(event) {
+    event.preventDefault();
+    var mouse3D = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
+    var raycaster = projector.pickingRay( mouse3D.clone(), camera );
+    var intersects = raycaster.intersectObjects(objects);
+    if(intersects.length > 0)
+      handler(intersects[0]);
+  };
 }
