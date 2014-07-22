@@ -131,9 +131,15 @@ function init() {
       else return target;
     });
 
-    var color = Math.random() * 0xffffff;
-    var material = new THREE.MeshBasicMaterial( { color: color } );
+    objects.forEach(function(object) {
+      if(object.old_material) object.material = object.old_material;
+    });
+
+    var major_color = Math.random() * 0xf00000;
     group.members.forEach(function(object) {
+      var minor_color = Math.random() * 0xfffff;
+      var material = new THREE.MeshBasicMaterial( { color: (major_color + minor_color) } );
+      object.old_material = object.material;
       object.material = material;
     });
 
