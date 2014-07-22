@@ -45,7 +45,7 @@ function init() {
   var aspect = window.innerWidth / window.innerHeight;
   var d = 20;
   camera = new THREE.OrthographicCamera( - d * aspect, d * aspect, d, - d, 1, 1000 );
-  camera.position.set( 0, 20, 20 );
+  camera.position.set( 17.32, 14.14, 17.32 );
   camera.rotation.y = Math.PI / 3;
   camera.rotation.x = Math.atan( - 1 / Math.sqrt( 2 ) );
 
@@ -126,7 +126,6 @@ function init() {
 
   var handler = function(intersect) {
     var id = intersect.object.id;
-    console.log(id);
     var group = groups.reduce(function(target, group) {
       if(id >= group.min && id <= group.max) return group;
       else return target;
