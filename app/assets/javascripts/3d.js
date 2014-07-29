@@ -144,7 +144,11 @@ function init() {
   xhr('get', '/states', '', function(response) {
     var states = JSON.parse(response.target.response);
     states.forEach(function(group_state) {
-      var group = groups.find(function(group) { return group.name === group_state.name; });
+      // var group = groups.find(function(group) { return group.name === group_state.name; });
+      var group = groups.reduce(function(target, group) {
+        if(group.name === group_state.name) return group;
+        else return target;
+      });
 
       if(group) {
         group.comment = group_state.comment;
@@ -164,7 +168,6 @@ function init() {
 
   var handler = function(intersect) {
     var id = intersect.object.id;
-    // TODO: find instead of reduce
     var group = groups.reduce(function(target, group) {
       if(id >= group.min && id <= group.max) return group;
       else return target;
