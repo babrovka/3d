@@ -128,8 +128,6 @@ function init() {
     {name: 'ambar', min: 56, max: 58 }
   ];
 
-  console.log('lol');
-
   var offset = objects.reduce(function(min, object) {
     if(object.id < min) return object.id;
     else return min;
@@ -138,7 +136,6 @@ function init() {
   // Group objects
   groups.forEach(function(group) {
     group.members = objects.filter(function(object) {
-      console.log(object.id, offset, object.id - offset, group.min, group.max);
       return ((object.id - offset) >= group.min && (object.id - offset) <= group.max);
     });
   });
@@ -197,7 +194,6 @@ function init() {
     var state = html('#state');
     state.classList.remove('disabled');
     state.query('#name').textContent = group.name;
-    console.log(group);
     state.query('#comment').value = group.comment || '';
     state.query('#alert').checked = group.state;
 
