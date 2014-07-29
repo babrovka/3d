@@ -128,13 +128,19 @@ function init() {
     {name: 'ambar', min: 56, max: 58 }
   ];
 
+  console.log('lol');
+
+  var offset = objects.reduce(function(min, object) {
+    if(object.id < min) return object.id;
+    else return min;
+  }, 100000000) - 1;
+
   // Group objects
   groups.forEach(function(group) {
-    // TODO: filter instead of reduce
-    group.members = objects.reduce(function(matching, object) {
-      if(object.id >= group.min && object.id <= group.max) return matching.concat(object);
-      else return matching;
-    }, []);
+    group.members = objects.filter(function(object) {
+      console.log(object.id, offset, object.id - offset, group.min, group.max);
+      return ((object.id - offset) >= group.min && (object.id - offset) <= group.max);
+    });
   });
 
   var alerted_material = new THREE.MeshLambertMaterial( { color: 0xbb4444 } );
