@@ -172,7 +172,11 @@ function init() {
 
     if(current_group)
       current_group.members.forEach(function(object) {
-        object.material = normal_material;
+        if(current_group.state === true) {
+          object.material = alerted_material;
+        } else {
+          object.material = normal_material;
+        }
       });
 
     group.members.forEach(function(object) {
