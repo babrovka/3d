@@ -1,4 +1,3 @@
-
 var container, stats;
 var camera, scene, renderer, projector;
 var dae;
@@ -138,6 +137,10 @@ function init() {
     }, []);
   });
 
+  var alerted_material = new THREE.MeshLambertMaterial( { color: 0xbb4444 } );
+  var normal_material = new THREE.MeshLambertMaterial( { color: 0xaaaaaa } );
+  var selected_material = new THREE.MeshLambertMaterial( { color: 0x88cc88 } );
+
   xhr('get', '/states', '', function(response) {
     var states = JSON.parse(response.target.response);
     states.forEach(function(group_state) {
@@ -148,13 +151,13 @@ function init() {
         group.state = group_state.state;
       }
 
-      if(group_state.state === 1) {
-        group.members.forEach(function(object) {
-          var red = 0xaa4444;
-          var material = new THREE.MeshLambertMaterial( { color: red } );
-          object.material = material;
-        });
-      }
+      group.members.forEach(function(object) {
+        if(group_state.state === 1) {
+          object.material = alerted_material;
+        } else {
+          object.material = normal_material;
+        }
+      });
     });
     render();
   });
@@ -169,14 +172,11 @@ function init() {
 
     if(current_group)
       current_group.members.forEach(function(object) {
-        if(object.old_material) object.material = object.old_material;
+        object.material = normal_material;
       });
 
-    var color = 0x88bb88;
-    var material = new THREE.MeshLambertMaterial( { color: color } );
     group.members.forEach(function(object) {
-      object.old_material = object.material;
-      object.material = material;
+      object.material = selected_material;
     });
 
     current_group = group;
@@ -204,6 +204,14 @@ function init() {
 
   state.query('#alert').addEventListener('click', function() {
     current_group.state = state.query('#alert').checked;
+    current_group.members.forEach(function(object) {
+      if(current_group.state === true) {
+        object.material = alerted_material;
+      } else {
+        object.material = normal_material;
+      }
+      render();
+    });
     xhr('post', '/state?id=' + current_group.name + "&state=" + current_group.state);
   });
 }
