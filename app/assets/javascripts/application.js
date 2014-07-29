@@ -15,6 +15,6 @@
 //= require ColladaLoader
 //= require OBJLoader
 //= require Detector
-//= require OrbitControls
 //= require stats.min
+//= require OrbitControls
 //= require 3d

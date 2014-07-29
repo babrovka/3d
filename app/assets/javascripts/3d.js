@@ -67,7 +67,7 @@ function init() {
   scene.add( dae );
 
   // Controls
-  controls = new THREE.OrbitControls( camera, renderer.domElement );
+  var controls = new THREE.OrbitControls( camera, renderer.domElement );
   controls.addEventListener( 'change', render );
   controls.noZoom = false;
   controls.noPan = false;
