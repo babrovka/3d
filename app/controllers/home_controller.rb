@@ -7,14 +7,18 @@ class HomeController < ApplicationController
   end
 
   def comment
-    construction = Construction.first_or_initialize(name: params[:id])
+    puts params.inspect
+    construction = Construction.where(name: params[:id]).first_or_initialize
     construction.comment = params[:comment]
     construction.save
+    render text: ''
   end
 
   def state
-    construction = Construction.first_or_initialize(name: params[:id])
-    construction.state = params[:state]
+    puts params.inspect
+    construction = Construction.where(name: params[:id]).first_or_initialize
+    construction.state = params[:state] == 'true'
     construction.save
+    render text: ''
   end
 end

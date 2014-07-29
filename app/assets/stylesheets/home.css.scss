@@ -1,6 +1,7 @@
 body {
   background-color: #000000;
   overflow: hidden;
+  margin: 0;
 }
 
 #state {
@@ -8,4 +9,8 @@ body {
   top: 0px;
   right: 0px;
   background: white;
+}
+
+#state.disabled {
+  visibility: hidden;
 }

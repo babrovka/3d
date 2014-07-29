@@ -1,11 +1,11 @@
-// TODO: wrap in onload
-// if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 var container, stats;
 var camera, scene, renderer, projector;
 var dae;
 var ground;
 var objects, groups;
+
+var current_group;
 
 function xhr(method, url, data, success, fail) {
   var r = new XMLHttpRequest();
@@ -15,26 +15,31 @@ function xhr(method, url, data, success, fail) {
   r.send(data);
 }
 
-var loader = new THREE.ColladaLoader();
-loader.options.convertUpAxis = true;
-loader.load( '/models/buildings.dae', function ( collada ) {
-  dae = collada.scene;
-  dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
-  dae.position.x = -10; dae.position.z = 10;
-  dae.updateMatrix();
-  init();
-  render();
-});
+window.addEventListener('load', function() {
+  if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+  window.html = HTML.query.bind(HTML);
 
-// var loader = new THREE.OBJLoader();
-// loader.load( '/models/damba_simple_v3.obj', function ( obj ) {
-//   dae = obj;
-//   dae.scale.x = dae.scale.y = dae.scale.z = 0.1;
-//   dae.rotation.x = Math.PI/2;
-//   dae.updateMatrix();
-//   init();
-//   render();
-// });
+  var loader = new THREE.ColladaLoader();
+  loader.options.convertUpAxis = true;
+  loader.load( '/models/buildings.dae', function ( collada ) {
+    dae = collada.scene;
+    dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
+    dae.position.x = -10; dae.position.z = 10;
+    dae.updateMatrix();
+    init();
+    render();
+  });
+
+  // var loader = new THREE.OBJLoader();
+  // loader.load( '/models/damba_simple_v3.obj', function ( obj ) {
+  //   dae = obj;
+  //   dae.scale.x = dae.scale.y = dae.scale.z = 0.1;
+  //   dae.rotation.x = Math.PI/2;
+  //   dae.updateMatrix();
+  //   init();
+  //   render();
+  // });
+});
 
 function deepComputeBoundingBox(object) {
   object.children.forEach(deepComputeBoundingBox);
@@ -162,9 +167,10 @@ function init() {
       else return target;
     });
 
-    objects.forEach(function(object) {
-      if(object.old_material) object.material = object.old_material;
-    });
+    if(current_group)
+      current_group.members.forEach(function(object) {
+        if(object.old_material) object.material = object.old_material;
+      });
 
     var color = 0x88bb88;
     var material = new THREE.MeshLambertMaterial( { color: color } );
@@ -173,11 +179,33 @@ function init() {
       object.material = material;
     });
 
+    current_group = group;
+
+    var state = html('#state');
+    state.classList.remove('disabled');
+    state.query('#name').textContent = group.name;
+    console.log(group);
+    state.query('#comment').value = group.comment || '';
+    state.query('#alert').checked = group.state;
+
     render();
   };
 
   container.addEventListener( 'dblclick', mouseReact(handler), false );
   // container.addEventListener( 'mousemove', mouseReact(handler), false );
+
+  var state = html('#state');
+  state.query('#comment').addEventListener('keydown', function(event) {
+    if(event.keyCode == 13) {
+      current_group.comment = html('#state #comment').value;
+      xhr('post', '/comment?id=' + current_group.name + "&comment=" + current_group.comment);
+    }
+  });
+
+  state.query('#alert').addEventListener('click', function() {
+    current_group.state = state.query('#alert').checked;
+    xhr('post', '/state?id=' + current_group.name + "&state=" + current_group.state);
+  });
 }
 
 function render() {
