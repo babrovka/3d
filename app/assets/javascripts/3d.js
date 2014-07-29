@@ -146,7 +146,7 @@ function init() {
       if(group_state.state === 1) {
         group.members.forEach(function(object) {
           var red = 0xaa4444;
-          var material = new THREE.MeshBasicMaterial( { color: red } );
+          var material = new THREE.MeshLambertMaterial( { color: red } );
           object.material = material;
         });
       }
@@ -166,10 +166,9 @@ function init() {
       if(object.old_material) object.material = object.old_material;
     });
 
-    var major_color = Math.random() * 0xf00000;
-    group.members.foreach(function(object) {
-      var minor_color = math.random() * 0xfffff;
-      var material = new THREE.MeshBasicMaterial( { color: (major_color + minor_color) } );
+    var color = 0x88bb88;
+    var material = new THREE.MeshLambertMaterial( { color: color } );
+    group.members.forEach(function(object) {
       object.old_material = object.material;
       object.material = material;
     });
@@ -189,6 +188,7 @@ function render() {
 function mouseReact(handler) {
   return function(event) {
     event.preventDefault();
+    // clientX relative to div
     var mouse3D = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
     var raycaster = projector.pickingRay( mouse3D.clone(), camera );
     var intersects = raycaster.intersectObjects(objects);
