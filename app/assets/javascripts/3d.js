@@ -1,4 +1,5 @@
 var container;
+var balloons = [];
 var camera, scene, renderer, projector;
 var dae;
 
@@ -143,6 +144,12 @@ function init() {
       } else {
         object.children[0].material = normal_material;
       }
+
+      var balloon = HTML.body.add('span');
+      balloon.classList.add('balloon');
+      balloon.textContent = state.id;
+      balloon.object_id = state.id;
+      balloons.unshift(balloon);
     });
     render();
   });
@@ -195,6 +202,7 @@ function init() {
 
 function render() {
   renderer.render( scene, camera );
+  updateBalloons();
 }
 
 function mouseReact(handler) {
@@ -206,5 +214,30 @@ function mouseReact(handler) {
     var intersects = raycaster.intersectObjects(intersect_objects);
     if(intersects.length > 0)
       handler(intersects[0]);
+  };
+}
+
+function updateBalloons() {
+  // balloons.forEach(updateBalloon);
+}
+
+function updateBalloon(balloon) {
+  var object = dae.getObjectById(balloon.object_id);
+  if(object) {
+    var on_screen = calc2DPoint(object.children[0].geometry.boundingBox.max);
+    console.log(object.children[0].geometry.boundingBox.max);
+
+    balloon.style.left = on_screen.x + 'px';
+    balloon.style.top = on_screen.y + 'px';
+  }
+}
+
+function calc2DPoint(worldVector) {
+  var vector = projector.projectVector(worldVector, camera);
+  var halfWidth = renderer.domElement.width / 2;
+  var halfHeight = renderer.domElement.height / 2;
+  return {
+    x: Math.round(vector.x * halfWidth + halfWidth),
+    y: Math.round(-vector.y * halfHeight + halfHeight)
   };
 }
