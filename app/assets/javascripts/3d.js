@@ -1,4 +1,4 @@
-var container, stats;
+var container;
 var camera, scene, renderer, projector;
 var dae;
 
@@ -67,12 +67,21 @@ function init() {
 
   // Controls
   var controls = new THREE.OrbitControls( camera, renderer.domElement );
+  controls.addEventListener( 'end', render );
   controls.addEventListener( 'change', render );
-  controls.noZoom = false;
-  controls.noPan = false;
   controls.maxPolarAngle = Math.PI / 3;
   controls.minPolarAngle = Math.PI / 3;
   controls.zoomSpeed = 1;
+  controls.dollyIn = function( dollyScale ) {
+    if ( dollyScale === undefined ) dollyScale = Math.pow( 0.95, this.zoomSpeed );
+    this.object.scale.x *= dollyScale;
+    this.object.scale.y *= dollyScale;
+  };
+  controls.dollyOut = function( dollyScale ) {
+    if ( dollyScale === undefined ) dollyScale = Math.pow( 0.95, this.zoomSpeed );
+    this.object.scale.x /= dollyScale;
+    this.object.scale.y /= dollyScale;
+  };
 
   // Lights
   var light = new THREE.PointLight( 0xffffff, 0.8 );
@@ -109,11 +118,6 @@ function init() {
   scene.add( line );
 
   container.appendChild( renderer.domElement );
-
-  stats = new Stats();
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '0px';
-  container.appendChild( stats.domElement );
 
   intersect_objects = dae.children.map(function(object) { return object.children[0]; });
 
@@ -191,7 +195,6 @@ function init() {
 
 function render() {
   renderer.render( scene, camera );
-  stats.update();
 }
 
 function mouseReact(handler) {
