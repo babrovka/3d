@@ -1,5 +1,4 @@
-var container;
-var balloons = [];
+var container, balloons = [], table;
 var camera, scene, renderer, projector;
 var dae;
 
@@ -127,36 +126,37 @@ function init() {
   var selected_material = new THREE.MeshLambertMaterial( { color: 0x88cc88 } );
 
   xhr('get', '/states', '', function(response) {
+    table = HTML.body.add('ul');
+    table.classList.add('objects');
     var states = JSON.parse(response.target.response);
     states.forEach(function(state) {
-      var object = dae.children.reduce(function(target, object) {
-        if(object.id === state.id) return object;
-        else return target;
-      });
+      var object = dae.getObjectById(state.id);
 
       if(object) {
         object.comment = state.comment;
         object.state = state.state;
-      }
 
-      if(state.state === 1) {
-        object.children[0].material = alerted_material;
-      } else {
-        object.children[0].material = normal_material;
-      }
+        if(state.state === 1) {
+          object.children[0].material = alerted_material;
+        } else {
+          object.children[0].material = normal_material;
+        }
 
-      var balloon = HTML.body.add('span');
-      balloon.classList.add('balloon');
-      balloon.textContent = state.id;
-      balloon.object_id = state.id;
-      balloons.unshift(balloon);
+        // var balloon = HTML.body.add('span');
+        // balloon.classList.add('balloon');
+        // balloon.textContent = state.id;
+        // balloon.object_id = state.id;
+        // balloons.unshift(balloon);
+
+        var li = table.add('li');
+        li.textContent = state.id;
+        li.addEventListener('click', function() { handler(object.children[0]); });
+      }
     });
     render();
   });
 
-  var handler = function(intersect) {
-    var object = intersect.object;
-
+  var handler = function(object) {
     if(current_object) {
       if(current_object.state === true) {
         current_object.material = alerted_material;
@@ -213,7 +213,7 @@ function mouseReact(handler) {
     var raycaster = projector.pickingRay( mouse3D.clone(), camera );
     var intersects = raycaster.intersectObjects(intersect_objects);
     if(intersects.length > 0)
-      handler(intersects[0]);
+      handler(intersects[0].object);
   };
 }
 
