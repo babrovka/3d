@@ -1,10 +1,8 @@
 var container, stats;
 var camera, scene, renderer, projector;
 var dae;
-var ground;
-var objects, groups;
 
-var current_group;
+var current_object;
 
 function xhr(method, url, data, success, fail) {
   var r = new XMLHttpRequest();
@@ -20,11 +18,12 @@ window.addEventListener('load', function() {
 
   var loader = new THREE.ColladaLoader();
   loader.options.convertUpAxis = true;
-  loader.load( '/models/buildings.dae', function ( collada ) {
+  loader.load( '/models/buildings2.dae', function ( collada ) {
     dae = collada.scene;
-    dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
+    dae.scale.x = dae.scale.y = dae.scale.z = 0.5;
     dae.position.x = -10; dae.position.z = 10;
     dae.updateMatrix();
+    deepComputeBoundingBox(dae);
     init();
     render();
   });
@@ -89,12 +88,12 @@ function init() {
   // Ground
   var plane_geometry = new THREE.PlaneGeometry( 100, 100 );
   var plane_material = new THREE.MeshBasicMaterial( {color: 0x6666aa, side: THREE.DoubleSide} );
-  ground = new THREE.Mesh(plane_geometry, plane_material);
+  var ground = new THREE.Mesh(plane_geometry, plane_material);
   ground.rotation.x = Math.PI / 2;
   scene.add(ground);
 
   // Grid
-  var size = 100, step = 10;
+  var size = 100, step = 2;
 
   var geometry = new THREE.Geometry();
   var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
@@ -116,29 +115,7 @@ function init() {
   stats.domElement.style.top = '0px';
   container.appendChild( stats.domElement );
 
-  objects = dae.children[0].children.reduce(function(acc, children) { return acc.concat(children); }, []);
-
-  // Group by object ids
-  groups = [
-    {name: 'pyramid', min: 1, max: 21 },
-    {name: 'warehouse', min: 22, max: 42 },
-    {name: 'angle', min: 43, max: 47 },
-    {name: 'wall', min: 48, max: 50 },
-    {name: 'building', min: 51, max: 55 },
-    {name: 'ambar', min: 56, max: 58 }
-  ];
-
-  var offset = objects.reduce(function(min, object) {
-    if(object.id < min) return object.id;
-    else return min;
-  }, 100000000) - 1;
-
-  // Group objects
-  groups.forEach(function(group) {
-    group.members = objects.filter(function(object) {
-      return ((object.id - offset) >= group.min && (object.id - offset) <= group.max);
-    });
-  });
+  intersect_objects = dae.children.map(function(object) { return object.children[0]; });
 
   var alerted_material = new THREE.MeshLambertMaterial( { color: 0xbb4444 } );
   var normal_material = new THREE.MeshLambertMaterial( { color: 0xaaaaaa } );
@@ -146,56 +123,45 @@ function init() {
 
   xhr('get', '/states', '', function(response) {
     var states = JSON.parse(response.target.response);
-    states.forEach(function(group_state) {
-      // var group = groups.find(function(group) { return group.name === group_state.name; });
-      var group = groups.reduce(function(target, group) {
-        if(group.name === group_state.name) return group;
+    states.forEach(function(state) {
+      var object = dae.children.reduce(function(target, object) {
+        if(object.id === state.id) return object;
         else return target;
       });
 
-      if(group) {
-        group.comment = group_state.comment;
-        group.state = group_state.state;
+      if(object) {
+        object.comment = state.comment;
+        object.state = state.state;
       }
 
-      group.members.forEach(function(object) {
-        if(group_state.state === 1) {
-          object.material = alerted_material;
-        } else {
-          object.material = normal_material;
-        }
-      });
+      if(state.state === 1) {
+        object.children[0].material = alerted_material;
+      } else {
+        object.children[0].material = normal_material;
+      }
     });
     render();
   });
 
   var handler = function(intersect) {
-    var id = intersect.object.id;
-    var group = groups.reduce(function(target, group) {
-      if(id >= group.min && id <= group.max) return group;
-      else return target;
-    });
+    var object = intersect.object;
 
-    if(current_group)
-      current_group.members.forEach(function(object) {
-        if(current_group.state === true) {
-          object.material = alerted_material;
-        } else {
-          object.material = normal_material;
-        }
-      });
+    if(current_object) {
+      if(current_object.state === true) {
+        current_object.material = alerted_material;
+      } else {
+        current_object.material = normal_material;
+      }
+    }
 
-    group.members.forEach(function(object) {
-      object.material = selected_material;
-    });
-
-    current_group = group;
+    object.material = selected_material;
+    current_object = object;
 
     var state = html('#state');
     state.classList.remove('disabled');
-    state.query('#name').textContent = group.name;
-    state.query('#comment').value = group.comment || '';
-    state.query('#alert').checked = group.state;
+    state.query('#name').textContent = object.parent.id;
+    state.query('#comment').value = object.parent.comment || '';
+    state.query('#alert').checked = object.parent.state;
 
     render();
   };
@@ -206,22 +172,20 @@ function init() {
   var state = html('#state');
   state.query('#comment').addEventListener('keydown', function(event) {
     if(event.keyCode == 13) {
-      current_group.comment = html('#state #comment').value;
-      xhr('post', '/comment?id=' + current_group.name + "&comment=" + current_group.comment);
+      current_object.comment = html('#state #comment').value;
+      xhr('post', '/comment?id=' + current_object.parent.id + "&comment=" + current_object.comment);
     }
   });
 
   state.query('#alert').addEventListener('click', function() {
-    current_group.state = state.query('#alert').checked;
-    current_group.members.forEach(function(object) {
-      if(current_group.state === true) {
-        object.material = alerted_material;
-      } else {
-        object.material = normal_material;
-      }
-      render();
-    });
-    xhr('post', '/state?id=' + current_group.name + "&state=" + current_group.state);
+    current_object.state = state.query('#alert').checked;
+    if(current_object.state === true) {
+      current_object.material = alerted_material;
+    } else {
+      current_object.material = normal_material;
+    }
+    render();
+    xhr('post', '/state?id=' + current_object.parent.id + "&state=" + current_object.state);
   });
 }
 
@@ -236,7 +200,7 @@ function mouseReact(handler) {
     // clientX relative to div
     var mouse3D = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
     var raycaster = projector.pickingRay( mouse3D.clone(), camera );
-    var intersects = raycaster.intersectObjects(objects);
+    var intersects = raycaster.intersectObjects(intersect_objects);
     if(intersects.length > 0)
       handler(intersects[0]);
   };
