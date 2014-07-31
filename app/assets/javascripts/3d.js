@@ -2,7 +2,7 @@ var container, balloons = [], table;
 var camera, scene, renderer, projector;
 var dae;
 
-var current_object;
+var current_object, intersect_objects;
 
 function xhr(method, url, data, success, fail) {
   var r = new XMLHttpRequest();
